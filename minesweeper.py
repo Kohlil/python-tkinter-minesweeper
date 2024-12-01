@@ -6,8 +6,7 @@ from tkinter import messagebox as tkMessageBox
 from collections import deque
 import random
 import platform
-import time
-from datetime import time, date, datetime
+from datetime import datetime
 
 SIZE_X = 10
 SIZE_Y = 10
