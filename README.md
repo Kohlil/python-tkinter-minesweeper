@@ -22,7 +22,7 @@ Minesweeper game written in Python using Tkinter GUI library.
 ## Reengineered System
 When refactoring the project to adhere to the MVC model, many methods were moved to new packages and modules.
 Below is a table mapping functions from the original project to the new MVC architecture. The new architecture contains three main packages: model, view, and controller.
-These packages each encapsulate a portion of the MVC architecture.
+These packages each encapsulate a component of the MVC architecture.
 
 ### Model
 Model contains all classes related to the underlying model of minesweeper such as a board and the cells that make up the board.
