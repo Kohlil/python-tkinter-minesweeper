@@ -55,6 +55,7 @@ class Minesweeper:
         self.updateTimer() # init timer
 
     def setup(self):
+        # board.py __init__
         # create flag and clicked tile variables
         self.flagCount = 0
         self.correctFlagCount = 0

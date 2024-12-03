@@ -11,10 +11,12 @@ class Cell:
     """Represents a cell on the minesweeper board. Contains state variables such as is_checked, is_flagged
     """
 
-    def __init__(self, type: CellType):
+    def __init__(self, type: CellType, x: int, y: int):
+        self.x = x
+        self.y = y
         self._is_checked = False # Set to false until user interacts with this cell
         self._is_flagged = False # Set to false until user interacts with this cell
-        self._type = type
+        self.type = type
         self._nearby_mines = 0 # Initialize to zero and on second pass set the value if _type == CellType.EMPTY
     
     # is_checked getter / setter
