@@ -22,8 +22,8 @@ window = None
 
 class Minesweeper:
 
+    # tkinter view
     def __init__(self, tk):
-
         # import images
         self.images = {
             "plain": PhotoImage(file = "images/tile_plain.gif"),
@@ -55,7 +55,7 @@ class Minesweeper:
         self.updateTimer() # init timer
 
     def setup(self):
-        # board.py __init__
+        # model.board.setup
         # create flag and clicked tile variables
         self.flagCount = 0
         self.correctFlagCount = 0
@@ -98,7 +98,7 @@ class Minesweeper:
                 tile["button"].grid( row = x+1, column = y ) # offset by 1 row for timer
 
                 self.tiles[x][y] = tile
-
+# model.board.count_mines
         # loop again to find nearby mines and display number on tile
         for x in range(0, SIZE_X):
             for y in range(0, SIZE_Y):
@@ -107,14 +107,17 @@ class Minesweeper:
                     mc += 1 if n["isMine"] else 0
                 self.tiles[x][y]["mines"] = mc
 
+    # tkinter view AND model.board
     def restart(self):
         self.setup()
         self.refreshLabels()
 
+    # tkinter view
     def refreshLabels(self):
         self.labels["flags"].config(text = "Flags: "+str(self.flagCount))
         self.labels["mines"].config(text = "Mines: "+str(self.mines))
 
+    # tkinter view / text view
     def gameOver(self, won):
         for x in range(0, SIZE_X):
             for y in range(0, SIZE_Y):
@@ -132,6 +135,7 @@ class Minesweeper:
         else:
             self.tk.quit()
 
+    # model.board
     def updateTimer(self):
         ts = "00:00:00"
         if self.startTime != None:
@@ -142,6 +146,7 @@ class Minesweeper:
         self.labels["time"].config(text = ts)
         self.frame.after(100, self.updateTimer)
 
+    # model.board
     def getNeighbors(self, x, y):
         neighbors = []
         coords = [
@@ -161,12 +166,15 @@ class Minesweeper:
                 pass
         return neighbors
 
+    # tkinter view
     def onClickWrapper(self, x, y):
         return lambda Button: self.onClick(self.tiles[x][y])
 
+    # tkinter view
     def onRightClickWrapper(self, x, y):
         return lambda Button: self.onRightClick(self.tiles[x][y])
 
+    # tkinter view
     def onClick(self, tile):
         if self.startTime == None:
             self.startTime = datetime.now()
@@ -189,6 +197,7 @@ class Minesweeper:
         if self.clickedCount == (SIZE_X * SIZE_Y) - self.mines:
             self.gameOver(True)
 
+    # tkinter view
     def onRightClick(self, tile):
         if self.startTime == None:
             self.startTime = datetime.now()
@@ -214,6 +223,7 @@ class Minesweeper:
             self.flagCount -= 1
             self.refreshLabels()
 
+    # tkinter view
     def clearSurroundingTiles(self, id):
         queue = deque([id])
 
@@ -226,6 +236,7 @@ class Minesweeper:
             for tile in self.getNeighbors(x, y):
                 self.clearTile(tile, queue)
 
+    # tkinter view
     def clearTile(self, tile, queue):
         if tile["state"] != STATE_DEFAULT:
             return
@@ -241,6 +252,7 @@ class Minesweeper:
 
 ### END OF CLASSES ###
 
+# tkinter view
 def main():
     # create Tk instance
     window = Tk()

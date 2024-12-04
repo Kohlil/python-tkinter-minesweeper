@@ -61,6 +61,10 @@ class TkinterViewer(Viewer):
         else:
             self.tk.quit()
             
+    def refreshLabels(self):
+        self.labels["flags"].config(text = "Flags: "+str(self.flagCount))
+        self.labels["mines"].config(text = "Mines: "+str(self.mines))
+            
     def onClickWrapper(self, x, y):
         return lambda Button: self.onClick(self.tiles[x][y])
 
