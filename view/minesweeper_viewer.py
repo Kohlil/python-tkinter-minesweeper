@@ -10,13 +10,26 @@ class Viewer(ABC):
         ABC (ABC): Abstract class helper
     """
     
-    def __init__(self, x_size: int, y_size: int, controller: Controller):
-        self.controller = controller
-        self.x_size = x_size
-        self.y_size = y_size
+    @abstractmethod
+    def __init__(self, controller: Controller, x_size: int, y_size: int):
+        pass
 
     @abstractmethod
-    def update_cell(self, x: int, y: int):
+    def update_cell(self, x: int, y: int, ):
+        pass
+    
+    @abstractmethod
+    def get_difficulty(self):
+        pass
+    
+    @abstractmethod
+    def start_board(self):
+        pass
+    
+    @abstractmethod
+    def get_existing_board_path(self):
+        """If user wishes to load an existing board, return the path to the board, otherwise returns None
+        """
         pass
     
     def handle_input(self, x: int, y: int): # and some way of transfering the action taken by user

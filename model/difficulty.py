@@ -1,15 +1,30 @@
 from enum import Enum
 
-class DifficultyData:
-    def __init__(self, x_size: int, y_size: int, max_mines: int, min_mines: int, max_treasures: int, min_treasures):
-        self.x_size = x_size # num columns
-        self.y_size = y_size # num rows
-        self.max_mines = max_mines
-        self.min_mines = min_mines
-        self.max_treasures = max_treasures
-        self.min_treasures = min_treasures
-
 class Difficulty(Enum):
-    BEGINNER = DifficultyData(8, 8, 10, 1, 5, 2)
-    INTERMEDIATE = DifficultyData(16, 16, 40, 11, 4, 2)
-    EXPERT = DifficultyData(30, 16, 99, 41, 3, 2)
+    BEGINNER = (8, 8, 10, 6, 5, 2)
+    INTERMEDIATE = (16, 16, 40, 11, 4, 2)
+    EXPERT = (30, 16, 99, 41, 3, 2)
+
+    @property
+    def x_size(self):
+        return self.value[0]
+
+    @property
+    def y_size(self):
+        return self.value[1]
+
+    @property
+    def max_mines(self):
+        return self.value[2]
+
+    @property
+    def min_mines(self):
+        return self.value[3]
+
+    @property
+    def max_treasures(self):
+        return self.value[4]
+
+    @property
+    def min_treasures(self):
+        return self.value[5]
