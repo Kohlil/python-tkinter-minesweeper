@@ -15,9 +15,10 @@ Minesweeper game written in Python using Tkinter GUI library.
 ## Setup:
 1. Clone the repository: `git clone https://github.com/Kohlil/python-tkinter-minesweeper.git`
 2. If on Linux, Windows (WSL/Ubuntu) or MacOS, ensure tkinter is configured: `brew install python-tk`
-3. Create a virtual environemnt: `python3.13 -m venv venv`
-4. Activate the environemnt: `source venv/bin/activate`
-5. Run the minesweeper game: `python minesweeper.py`
+3. Create a virtual environemnt: `python3.13 -m venv .venv`
+4. Activate the environemnt: `source .venv/bin/activate`
+5. Install dependencies: `pip install -r requirements.txt`
+6. Run the minesweeper game: `python run.py`
 
 ## Reengineered System
 When refactoring the project to adhere to the MVC model, many methods were moved to new packages and modules.
