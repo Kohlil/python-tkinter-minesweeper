@@ -158,4 +158,7 @@ class TkinterViewer(MinesweeperViewer):
             bool: True if the user wants to play again, False otherwise.
         """
         self.tk.update()  # Force the UI to refresh before showing the dialog
-        return messagebox.askyesno("Game Over", message)
+        if messagebox.askyesno("Game Over", message):
+            return True
+        else:
+            self.tk.quit()
