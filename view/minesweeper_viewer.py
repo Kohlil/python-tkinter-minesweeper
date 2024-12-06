@@ -1,36 +1,20 @@
 from abc import ABC, abstractmethod
-from controller.controller import Controller
 
+from model.board import Board
 
-class Viewer(ABC):
-    """Represents the View component in MVC architecture for minesweeper.
-    Views should extend this class to ensure they will be compatible with the game.
+class MinesweeperViewer(ABC):
+    """Abstract base class for Minesweeper views."""
 
-    Args:
-        ABC (ABC): Abstract class helper
-    """
-    
-    @abstractmethod
-    def __init__(self, controller: Controller, x_size: int, y_size: int):
-        pass
+    def __init__(self, controller):
+        self.controller = controller  # Reference to the controller
 
     @abstractmethod
-    def update_cell(self, x: int, y: int, ):
+    def run(self):
+        """Starts the view loop."""
         pass
-    
+
     @abstractmethod
-    def get_difficulty(self):
+    def update(self, model: Board):
+        """Updates the view based on the current model state."""
         pass
-    
-    @abstractmethod
-    def start_board(self):
-        pass
-    
-    @abstractmethod
-    def get_existing_board_path(self):
-        """If user wishes to load an existing board, return the path to the board, otherwise returns None
-        """
-        pass
-    
-    def handle_input(self, x: int, y: int): # and some way of transfering the action taken by user
-        self.controller.handle_input(x, y)
+

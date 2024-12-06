@@ -1,21 +1,16 @@
 import platform
 from controller.controller import Controller
-from view.minesweeper_viewer import Viewer
+from view.minesweeper_viewer import MinesweeperViewer
 from tkinter import *
-from tkinter import messagebox as tkMessageBox
-from collections import deque
-from datetime import datetime
 from model.board import Board
 
 BTN_CLICK = "<Button-1>"
 BTN_FLAG = "<Button-2>" if platform.system() == 'Darwin' else "<Button-3>"
 
-class TkinterViewer(Viewer):
+class TkinterViewer(MinesweeperViewer):
     
-    def __init__(self, controller: Controller, x_size: int, y_size: int):
-        self.controller = controller
-        self.x_size = x_size
-        self.y_size = y_size
+    def __init__(self):
+        super().__init__(None)
         
         # create Tk instance
         self.tk = Tk()
@@ -44,117 +39,56 @@ class TkinterViewer(Viewer):
             "mines": Label(self.frame, text = "Mines: 0"),
             "flags": Label(self.frame, text = "Flags: 0")
         }
-        self.labels["time"].grid(row = 0, column = 0, columnspan = self.y_size) # top full width
-        self.labels["mines"].grid(row = self.x_size+1, column = 0, columnspan = int(self.y_size/2)) # bottom left
-        self.labels["flags"].grid(row = self.x_size+1, column = int(self.y_size/2)-1, columnspan = int(self.y_size/2)) # bottom right
         
-    def start_board(self):
+        self.buttons = []
+        
+    def run(self):
+        """Starts the Tkinter main loop."""
         self.tk.mainloop()
-        
-    def get_difficulty(self):
-        pass
     
     def get_existing_board_path(self):
         return None
     
-    def update_cell(self, x: int, y: int):
-        pass
+    def initialize_board(self):
+        """Sets up the buttons dynamically for the current board size."""
+        # Clear existing buttons
+        if len(self.buttons) > 0:
+            for button_row in self.buttons:
+                for button in button_row:
+                    button.destroy()
+            self.buttons = []
         
-    # def gameOver(self, won):
-    #     for x in range(0, self.X_SIZE):
-    #         for y in range(0, self.Y_SIZE):
-    #             if self.tiles[x][y]["isMine"] == False and self.tiles[x][y]["state"] == STATE_FLAGGED:
-    #                 self.tiles[x][y]["button"].config(image = self.images["wrong"])
-    #             if self.tiles[x][y]["isMine"] == True and self.tiles[x][y]["state"] != STATE_FLAGGED:
-    #                 self.tiles[x][y]["button"].config(image = self.images["mine"])
+        # Create new buttons
+        board: Board = self.controller.get_board()
+        
+        self.x_size = board.dif.x_size
+        self.y_size = board.dif.y_size
+        
+        self.labels["time"].grid(row = 0, column = 0, columnspan = self.y_size) # top full width
+        self.labels["mines"].grid(row = self.x_size+1, column = 0, columnspan = int(self.y_size/2)) # bottom left
+        self.labels["flags"].grid(row = self.x_size+1, column = int(self.y_size/2)-1, columnspan = int(self.y_size/2)) # bottom right
 
-    #     self.tk.update()
+        for x, row in enumerate(board.tiles):
+            button_row = []
+            for y, cell in enumerate(row):
+                button = Button(self.frame, text="", width=3, height=1,
+                                command=lambda x=x, y=y: self.controller.handle_click(x, y))
+                button.grid(row=x + 1, column=y)
+                button_row.append(button)
+            self.buttons.append(button_row)
 
-    #     msg = "You Win! Play again?" if won else "You Lose! Play again?"
-    #     res = tkMessageBox.askyesno("Game Over", msg)
-    #     if res:
-    #         self.restart()
-    #     else:
-    #         self.tk.quit()
-            
-    # def refreshLabels(self):
-    #     self.labels["flags"].config(text = "Flags: "+str(self.flagCount))
-    #     self.labels["mines"].config(text = "Mines: "+str(self.mines))
-            
-    # def onClickWrapper(self, x, y):
-    #     return lambda Button: self.onClick(self.tiles[x][y])
-
-    # def onRightClickWrapper(self, x, y):
-    #     return lambda Button: self.onRightClick(self.tiles[x][y])
-
-    # def onClick(self, tile):
-    #     if self.startTime == None:
-    #         self.startTime = datetime.now()
-
-    #     if tile["isMine"] == True:
-    #         # end game
-    #         self.gameOver(False)
-    #         return
-
-    #     # change image
-    #     if tile["mines"] == 0:
-    #         tile["button"].config(image = self.images["clicked"])
-    #         self.clearSurroundingTiles(tile["id"])
-    #     else:
-    #         tile["button"].config(image = self.images["numbers"][tile["mines"]-1])
-    #     # if not already set as clicked, change state and count
-    #     if tile["state"] != STATE_CLICKED:
-    #         tile["state"] = STATE_CLICKED
-    #         self.clickedCount += 1
-    #     if self.clickedCount == (self.X_SIZE * self.Y_SIZE) - self.mines:
-    #         self.gameOver(True)
-
-    # def onRightClick(self, tile):
-    #     if self.startTime == None:
-    #         self.startTime = datetime.now()
-
-    #     # if not clicked
-    #     if tile["state"] == STATE_DEFAULT:
-    #         tile["button"].config(image = self.images["flag"])
-    #         tile["state"] = STATE_FLAGGED
-    #         tile["button"].unbind(BTN_CLICK)
-    #         # if a mine
-    #         if tile["isMine"] == True:
-    #             self.correctFlagCount += 1
-    #         self.flagCount += 1
-    #         self.refreshLabels()
-    #     # if flagged, unflag
-    #     elif tile["state"] == 2:
-    #         tile["button"].config(image = self.images["plain"])
-    #         tile["state"] = 0
-    #         tile["button"].bind(BTN_CLICK, self.onClickWrapper(tile["coords"]["x"], tile["coords"]["y"]))
-    #         # if a mine
-    #         if tile["isMine"] == True:
-    #             self.correctFlagCount -= 1
-    #         self.flagCount -= 1
-    #         self.refreshLabels()
-            
-    # def clearSurroundingTiles(self, id):
-    #     queue = deque([id])
-
-    #     while len(queue) != 0:
-    #         key = queue.popleft()
-    #         parts = key.split("_")
-    #         x = int(parts[0])
-    #         y = int(parts[1])
-
-    #         for tile in self.getNeighbors(x, y):
-    #             self.clearTile(tile, queue)
-
-    # def clearTile(self, tile, queue):
-    #     if tile["state"] != STATE_DEFAULT:
-    #         return
-
-    #     if tile["mines"] == 0:
-    #         tile["button"].config(image = self.images["clicked"])
-    #         queue.append(tile["id"])
-    #     else:
-    #         tile["button"].config(image = self.images["numbers"][tile["mines"]-1])
-
-    #     tile["state"] = STATE_CLICKED
-    #     self.clickedCount += 1
+    def update_timer(self, elapsed_time):
+        """Updates the timer display."""
+        self.labels["time"].config(text=elapsed_time)
+    
+    def update(self, model: Board):
+        """Updates the view to reflect the current model state."""
+        self.labels["mines"].config(text=f"Mines: {model.actual_mines}")
+        self.labels["flags"].config(text=f"Flags: {model.flagCount}")
+        for x, row in enumerate(self.buttons):
+            for y, button in enumerate(row):
+                cell = model.tiles[x][y]
+                if cell.is_checked:
+                    button.config(text=str(cell.nearby_mines) if cell.nearby_mines > 0 else " ")
+                elif cell.is_flagged:
+                    button.config(text="F")

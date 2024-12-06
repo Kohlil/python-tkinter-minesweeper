@@ -1,6 +1,6 @@
 from model.difficulty import Difficulty
 from model.cell import Cell, CellType
-from model.utility import Utility
+from shared.utility import Utility
 import datetime
 
 
@@ -23,30 +23,70 @@ class Board:
         
     def restart(self):
         self.setup()
+            
+    def reveal_cell(self, x, y):
+        """Reveals a cell on the board and updates the game state."""
+        self.update_timer()
+            
         
-    def handle_update(self, x: int, y: int):
-        if self.startTime == None:
-            self.startTime = datetime.now()
-        
-        tile = self.tiles[x][y]
+        cell = self.tiles[x][y]
+        if cell.is_checked or cell.is_flagged:
+            return  # Do nothing if the cell is already checked or flagged
 
-        if tile.type == CellType.MINE:
-            # end game
+        cell.is_checked = True
+
+        if cell.type == CellType.MINE:
+            # End game if the revealed cell is a mine
             self.game_over(won=False)
             return
 
-        # change image
-        if tile["mines"] == 0:
-            tile["button"].config(image = self.images["clicked"])
-            self.clearSurroundingTiles(tile["id"])
+        if cell.type == CellType.TREASURE:
+            # End game with a win if a treasure is revealed
+            self.game_over(won=True)
+            return
+
+        if cell.nearby_mines == 0:
+            # If no nearby mines, recursively reveal neighbors
+            for neighbor in self.get_neighbors(x, y):
+                if not neighbor.is_checked:
+                    self.reveal_cell(neighbor.x, neighbor.y)
+
+        # Check if all safe cells are revealed
+        if self._all_safe_cells_revealed():
+            self.game_over(won=True)
+
+    def toggle_flag(self, x, y):
+        """Toggles the flagged state of a cell."""
+        cell: Cell = self.tiles[x][y]
+
+        if cell.is_checked:
+            return  # Do nothing if the cell is already revealed
+
+        if cell.is_flagged:
+            # Unflag the cell
+            cell.is_flagged = False
+            self.flagCount -= 1
+            if cell.type == CellType.MINE:
+                self.correctFlagCount -= 1
         else:
-            tile["button"].config(image = self.images["numbers"][tile["mines"]-1])
-        # if not already set as clicked, change state and count
-        if tile["state"] != STATE_CLICKED:
-            tile["state"] = STATE_CLICKED
-            self.clickedCount += 1
-        if self.clickedCount == (self.X_SIZE * self.Y_SIZE) - self.mines:
-            self.game_over(won=False)
+            # Flag the cell
+            cell.is_flagged = True
+            self.flagCount += 1
+            if cell.type == CellType.MINE:
+                self.correctFlagCount += 1
+
+        # Update game state based on flags
+        if self.correctFlagCount == self.actual_mines and self.flagCount == self.actual_mines:
+            self.game_over(won=True)
+
+    def _all_safe_cells_revealed(self):
+        """Checks if all non-mine and non-treasure cells are revealed."""
+        for row in self.tiles:
+            for cell in row:
+                if cell.type == CellType.EMPTY and not cell.is_checked:
+                    return False
+        return True
+
             
     def game_over(self, won: bool):
         pass
@@ -117,4 +157,6 @@ class Board:
             ts = str(delta).split(".")[0]  # drop ms
             if delta.total_seconds() < 36000:
                 ts = "0" + ts  # zero-pad
+        else:
+            self.startTime = datetime.now()
         return ts
