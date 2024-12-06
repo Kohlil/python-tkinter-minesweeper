@@ -8,6 +8,11 @@ class MinesweeperViewer(ABC):
         self.controller = controller  # Reference to the controller
         
     @abstractmethod
+    def save_board(self):
+        """Saves the current board top csv file and exits game"""
+        pass
+        
+    @abstractmethod
     def initialize_board(self):
         """Sets up the tiles dynamically for the current board size."""
         pass
@@ -35,4 +40,9 @@ class MinesweeperViewer(ABC):
     @abstractmethod
     def get_existing_board_path(self):
         """Asks user if they want to load an existing board, returns path to board or None"""
+        pass
+    
+    @abstractmethod
+    def cleanup(self):
+        """Performs cleanup tasks before exiting the game."""
         pass

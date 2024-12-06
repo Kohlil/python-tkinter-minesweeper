@@ -122,6 +122,8 @@ class Controller:
         restart = self.view.display_message("You Win! Play again?" if won else "You Lose! Play again?")
         if restart:
             self.set_difficulty(self.board.dif)
+        else:
+            self.view.cleanup()
 
     @ensure(lambda self, result: result is None or isinstance(result, Board), "Returned object must be a Board or None")
     def get_board(self):
@@ -133,29 +135,60 @@ class Controller:
         """
         return self.board
 
-    def enable_testing_mode(self):
+    @require(lambda self: self.view is not None, "The view must be initialized.")
+    @require(lambda validate: isinstance(validate, bool), "Validate must be a boolean.")
+    @ensure(
+        lambda self: self.board is not None, "The board must be loaded after this method."
+    )
+    @ensure(
+        lambda self, validate: not validate or Validator.validate_board(self.board),
+        "If validation is enabled, the board must be valid after loading.",
+    )
+    def load_existing_board(self, validate: bool):
         """
-        Enables testing mode by loading a predefined board configuration from a file.
-        Validates the board before use.
+        Enables loading a predefined board configuration from a file.
+        Validates the board before use if validate is True.
+
+        Args:
+            validate (bool): Whether to validate the loaded board.
+
+        Raises:
+            ValueError: If the loaded board is invalid.
+            SystemExit: If the board loading fails.
         """
         file_path = self.view.get_existing_board_path()
         if file_path:
             try:
                 self.board.load_board_from_csv(file_path)
-                if not Validator.validate_board(self.board):
+                if validate and not Validator.validate_board(self.board):
                     raise ValueError("Loaded board is not valid")
                 self.update_view()
             except ValueError as e:
                 print(f"Error loading board: {e}")
+                self.view.cleanup()
                 sys.exit(1)
 
     @require(lambda self, file_path: isinstance(file_path, str) and self.board is not None,
-             "File path must be a string and the board must be initialized")
-    def save_game(self, file_path):
+         "File path must be a string and the board must be initialized")
+    def save_game(self, file_path: str):
         """
         Saves the current game state to the specified file.
 
         Args:
             file_path (str): The path to save the game state.
         """
-        self.board.save_game(file_path)
+        # Ensure the file has a .csv extension
+        if not file_path.lower().endswith(".csv"):
+            file_path += ".csv"
+
+        try:
+            # Save the board to the CSV file
+            self.board.save_board_to_csv(file_path)
+
+        except Exception as e:
+            # Handle save failure
+            self.view.display_message(f"Error saving board: {e}")
+            return
+
+        # Call cleanup but avoid duplicating window destruction
+        self.view.cleanup()

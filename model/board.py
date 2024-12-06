@@ -297,22 +297,83 @@ class Board:
                 raise ValueError("CSV dimensions do not match the board size.")
 
             self.tiles = []
+            has_made_move = False
             for x, row in enumerate(rows):
                 self.tiles.append([])
                 for y, value in enumerate(row):
-                    if value == "0":
-                        cell_type = CellType.EMPTY
-                    elif value == "1":
-                        cell_type = CellType.MINE
-                    elif value == "2":
-                        cell_type = CellType.TREASURE
-                    else:
-                        raise ValueError(f"Invalid cell type '{value}' in CSV at ({x}, {y}).")
-                    self.tiles[x].append(Cell(cell_type, x, y))
+                    self.tiles[x].append(Cell(int(value), x, y))
+                    if not has_made_move:
+                        has_made_move = self.tiles[x][y].is_checked or self.tiles[x][y].is_flagged
 
+            if has_made_move:
+                self.clicked_count = 1
+                
             self.count_mines_treasures()
+            
+            # Try to guess the difficulty based on board data
+            self.dif = self.detect_difficulty()
 
         except FileNotFoundError:
             raise ValueError(f"File not found: {file_path}")
         except csv.Error as e:
             raise ValueError(f"Error reading CSV file: {e}")
+        
+    @require(lambda file_path: isinstance(file_path, str) and file_path.endswith(".csv"))
+    def save_board_to_csv(self, file_path: str):
+        """
+        Saves the current board configuration to a CSV file.
+
+        Args:
+            file_path (str): The path to the CSV file.
+
+        Raises:
+            IOError: If there is an issue writing to the file.
+        """
+        try:
+            with open(file_path, mode="w", newline="") as file:
+                writer = csv.writer(file)
+                for row in self.tiles:
+                    writer.writerow([str(cell.to_csv_state()) for cell in row])
+        except IOError as e:
+            raise IOError(f"Error writing to file {file_path}: {e}")
+
+    @require(lambda self: self.tiles, "The board must have tiles.")
+    @require(lambda self: len(self.tiles) > 0, "The board must have at least one row.")
+    @require(
+        lambda self: all(len(row) == len(self.tiles[0]) for row in self.tiles),
+        "All rows must have the same number of columns.",
+    )
+    @ensure(
+        lambda result: isinstance(result, Difficulty),
+        "The detected difficulty must be a valid Difficulty.",
+    )
+    def detect_difficulty(self):
+        """
+        Detects the difficulty of the current board based on its size and configuration.
+
+        Returns:
+            Difficulty: The detected difficulty level.
+
+        Raises:
+            ValueError: If the board does not match any predefined difficulty.
+        """
+        x_size = len(self.tiles)
+        y_size = len(self.tiles[0]) if x_size > 0 else 0
+
+        total_mines = sum(
+            1 for row in self.tiles for cell in row if cell.type == CellType.MINE
+        )
+        total_treasures = sum(
+            1 for row in self.tiles for cell in row if cell.type == CellType.TREASURE
+        )
+
+        for difficulty in Difficulty:
+            if (
+                difficulty.x_size == x_size
+                and difficulty.y_size == y_size
+                and difficulty.min_mines <= total_mines <= difficulty.max_mines
+                and difficulty.min_treasures <= total_treasures <= difficulty.max_treasures
+            ):
+                return difficulty
+
+        raise ValueError("The board does not match any predefined difficulty.")

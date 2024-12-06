@@ -1,5 +1,5 @@
 import platform
-from tkinter import Button, Frame, Label, PhotoImage, Tk, filedialog, messagebox
+from tkinter import Button, Frame, Label, PhotoImage, Tk, filedialog, messagebox, simpledialog
 from controller.controller import Controller
 from model.cell import CellType
 from model.board import Board
@@ -43,6 +43,16 @@ class TkinterViewer(MinesweeperViewer):
             "mines": Label(self.frame, text="Mines: 0"),
             "flags": Label(self.frame, text="Flags: 0"),
         }
+        
+        
+        # Add Save Board Button
+        self.save_button = Button(
+            self.frame,
+            text="Save Game",
+            command=self.save_board,  # Trigger the save_board method
+            bg="lightblue",
+            font=("Arial", 12, "bold")
+        )
 
         self.buttons = []  # Store buttons for the game grid
         self.elasped_time = "00:00:00"
@@ -91,6 +101,7 @@ class TkinterViewer(MinesweeperViewer):
         self.labels["time"].grid(row=0, column=0, columnspan=self.y_size)
         self.labels["mines"].grid(row=self.x_size + 1, column=0, columnspan=self.y_size // 2)
         self.labels["flags"].grid(row=self.x_size + 1, column=self.y_size // 2, columnspan=self.y_size // 2)
+        self.save_button.grid(row=self.x_size + 2, column=0, columnspan=self.y_size, pady=10)
 
         # Create grid buttons
         gfx = self.images["plain"]
@@ -158,7 +169,42 @@ class TkinterViewer(MinesweeperViewer):
             bool: True if the user wants to play again, False otherwise.
         """
         self.tk.update()  # Force the UI to refresh before showing the dialog
-        if messagebox.askyesno("Game Over", message):
-            return True
+        return messagebox.askyesno("Game Over", message)
+    
+    @require(lambda self: hasattr(self, "is_running"), "is_running attribute must exist.")
+    @ensure(lambda self: not self.is_running, "After cleanup, is_running must be False.")
+    def cleanup(self):
+        """Performs cleanup tasks before exiting the game."""
+        if hasattr(self, "is_running"):
+            self.is_running = False
+
+        if hasattr(self, "tk") and self.tk.winfo_exists():
+            self.tk.quit()  # Stop the Tkinter mainloop
+            self.tk.update_idletasks()  # Process remaining tasks
+            self.tk.destroy()  # Destroy the window
+            
+    @require(lambda self: self.controller is not None, "Controller must be set.")
+    def save_board(self):
+        """
+        Prompts the user to enter a file path and saves the current board to a CSV file.
+        """
+        file_path = simpledialog.askstring(
+            "Save Game", "Enter the file name or path to save the board:"
+        )
+        if file_path:
+            try:
+                # Append .csv if not already present
+                if not file_path.lower().endswith(".csv"):
+                    file_path += ".csv"
+
+                # Save the game using the controller
+                self.controller.save_game(file_path)
+
+                # Show success message
+                messagebox.showinfo("Save Successful", f"Board saved to {file_path}.")
+            except Exception as e:
+                # Show error dialog
+                messagebox.showerror("Error", f"Failed to save the board: {e}")
         else:
-            self.tk.quit()
+            # Warn if no file path is provided
+            messagebox.showwarning("Save Cancelled", "No file path provided.")

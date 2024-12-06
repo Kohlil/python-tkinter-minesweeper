@@ -1,9 +1,8 @@
 from view.minesweeper_viewer import MinesweeperViewer
 from model.board import Board
-from model.cell import Cell, CellType
+from model.cell import CellType
 from icontract import require, ensure
 import sys
-
 
 class TextView(MinesweeperViewer):
     """Represents a text-based interface for Minesweeper."""
@@ -19,7 +18,7 @@ class TextView(MinesweeperViewer):
         self.x_size = 0
         self.y_size = 0
         print("Welcome to Minesweeper!")
-        print("Commands: 'click x y' or 'flag x y'")
+        print("Commands: 'click x y', 'flag x y', or 'save' to save the game.")
         print("Type 'exit' to quit the game.")
         print("\nLegend:")
         print("  .  : Unchecked cell")
@@ -72,28 +71,31 @@ class TextView(MinesweeperViewer):
         """Starts the text-based game loop."""
         self.keep_going = True
         while self.keep_going:
-            cmd = input("Enter command (click x y / flag x y): ").strip()
+            cmd = input("Enter command (click x y / flag x y / save): ").strip()
             if cmd.lower() == "exit":
-                self.is_running = False
-                break
-            parts = cmd.split()
-            if len(parts) == 3:
-                try:
-                    x, y = int(parts[2]) - 1, int(parts[1]) - 1
-
-                    if not (0 <= x < self.x_size and 0 <= y < self.y_size):
-                        raise ValueError("Coordinates are out of bounds!")
-
-                    if parts[0].lower() == "click":
-                        self.keep_going = not self.controller.handle_click(x, y)
-                    elif parts[0].lower() == "flag":
-                        self.keep_going = not self.controller.handle_flag(x, y)
-                    else:
-                        print("Invalid command! Use 'click x y' or 'flag x y'.")
-                except ValueError as e:
-                    print(f"Invalid input: {e}")
+                self.cleanup()
+                sys.exit(0)
+            elif cmd.lower() == "save":
+                self.save_board()
             else:
-                print("Invalid command! Use 'click x y' or 'flag x y'.")
+                parts = cmd.split()
+                if len(parts) == 3:
+                    try:
+                        x, y = int(parts[2]) - 1, int(parts[1]) - 1
+
+                        if not (0 <= x < self.x_size and 0 <= y < self.y_size):
+                            raise ValueError("Coordinates are out of bounds!")
+
+                        if parts[0].lower() == "click":
+                            self.keep_going = not self.controller.handle_click(x, y)
+                        elif parts[0].lower() == "flag":
+                            self.keep_going = not self.controller.handle_flag(x, y)
+                        else:
+                            print("Invalid command! Use 'click x y', 'flag x y', or 'save'.")
+                    except ValueError as e:
+                        print(f"Invalid input: {e}")
+                else:
+                    print("Invalid command! Use 'click x y', 'flag x y', or 'save'.")
 
     @require(lambda model: isinstance(model, Board), "model must be an instance of Board")
     def update(self, model: Board):
@@ -123,8 +125,6 @@ class TextView(MinesweeperViewer):
         while True:
             restart = input("Do you want to play again? (yes/no): ").strip().lower()
             if restart in ("yes", "no"):
-                if restart == "no":
-                    sys.exit(0)
                 return restart == "yes"
             print("Invalid input. Please type 'yes' or 'no'.")
 
@@ -138,3 +138,30 @@ class TextView(MinesweeperViewer):
         """
         path = input("Enter the path to a saved board file, or press Enter to skip: ").strip()
         return path if path else None
+
+    @require(lambda self: self.controller is not None, "Controller must be set.")
+    def save_board(self):
+        """
+        Prompts the user to enter a file path and saves the current board to a CSV file.
+        """
+        file_path = input("Enter the file name or path to save the board: ").strip()
+        
+        # Append .csv if not already present
+        if not file_path.lower().endswith(".csv"):
+            file_path += ".csv"
+        
+        if file_path:
+            try:
+                self.controller.save_game(file_path)
+                print(f"Board successfully saved to {file_path}.")
+            except Exception as e:
+                print(f"Error: Failed to save the board. {e}")
+        else:
+            print("No file path provided.")
+
+    @require(lambda self: hasattr(self, "controller"), "Controller attribute must exist.")
+    @ensure(lambda: True, "Ensure that cleanup does not throw any exceptions.")
+    def cleanup(self):
+        """Performs cleanup tasks before exiting the game."""
+        print("Exiting the game. Goodbye!")
+        sys.exit(0) # Need to explicitly exit here to get out of input loop

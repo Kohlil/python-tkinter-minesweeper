@@ -58,8 +58,7 @@ def main():
 
     # Set the difficulty and optionally enable testing mode
     controller.set_difficulty(difficulty)
-    if args.testing_mode:
-        controller.enable_testing_mode()
+    controller.load_existing_board(args.testing_mode)
 
     # Start the game
     viewer.run()
