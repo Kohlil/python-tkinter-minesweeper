@@ -30,6 +30,7 @@ class Cell:
         self._is_flagged = False  # Set to false until user interacts with this cell
         self.type = type
         self._nearby_mines = 0  # Initialize to zero and on second pass set the value if _type == CellType.EMPTY
+        self._nearby_treasures = 0 # Initialize to zero and on second pass set the value if _type == CellType.EMPTY
 
     # is_checked getter / setter
     @property
@@ -67,3 +68,14 @@ class Cell:
         if not isinstance(value, int):
             raise TypeError("nearby_mines must be an int")
         self._nearby_mines = value
+        
+    # nearby_treasures getter / setter
+    @property
+    def nearby_treasures(self):
+        return self._nearby_treasures
+
+    @nearby_treasures.setter
+    def nearby_treasures(self, value):
+        if not isinstance(value, int):
+            raise TypeError("nearby_treasures must be an int")
+        self._nearby_treasures = value

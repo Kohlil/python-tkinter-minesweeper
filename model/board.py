@@ -20,7 +20,7 @@ class Board:
 
         # Create initial board
         self.place_items()
-        self.count_mines()
+        self.count_mines_treasures()
         
     def restart(self):
         self.setup()
@@ -47,11 +47,9 @@ class Board:
 
         if cell.type == CellType.TREASURE:
             # End game with a win if a treasure is revealed
-            print('clicked treasure')
-            self.game_over(won=True)
-            return None
+            return self.game_over(won=True)
 
-        if cell.nearby_mines == 0:
+        if cell.nearby_mines == 0 and cell.nearby_treasures == 0:
             # If no nearby mines, recursively reveal neighbors
             for neighbor in self.get_neighbors(x, y):
                 if not neighbor.is_checked:
@@ -155,15 +153,18 @@ class Board:
                 tile = Cell(cell_type, x, y)
                 self.tiles[x].append(tile)
 
-    def count_mines(self):
+    def count_mines_treasures(self):
         # loop to find nearby mines and display number on tile
         for x in range(0, self.dif.x_size):
             for y in range(0, self.dif.y_size):
                 mc = 0
+                tc = 0
                 n: Cell
                 for n in self.get_neighbors(x, y):
                     mc += 1 if n.type == CellType.MINE else 0
+                    tc += 1 if n.type == CellType.TREASURE else 0
                 self.tiles[x][y].nearby_mines = mc
+                self.tiles[x][y].nearby_treasures = tc
 
     def update_timer(self):
         ts = "00:00:00"
@@ -201,7 +202,7 @@ class Board:
         self.tiles[new_x][new_y].type = CellType.MINE  # Place mine in the new spot
 
         # Recalculate mine counts
-        self.count_mines()
+        self.count_mines_treasures()
 
         # Return the new position of the mine
         return new_x, new_y

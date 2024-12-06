@@ -38,6 +38,7 @@ class Controller:
 
     def handle_click(self, x, y):
         """Handles a cell click event."""
+        print(str(x) + ' ' + str(y))
         # start timer on first click
         if self.board.clicked_count == 0:
             threading.Thread(target=self.update_timer, daemon=True).start()
@@ -52,8 +53,11 @@ class Controller:
     def handle_flag(self, x, y):
         """Handles a flag event on a cell."""
         if self.board:
-            self.board.toggle_flag(x, y)  # Call toggle_flag from the model
-            self.update_view()
+            won = self.board.toggle_flag(x, y)  # Call toggle_flag from the model
+            if won != None:  # Check if the game is over
+                self.handle_game_over(won)
+            else:
+                self.update_view()
 
     def update_view(self):
         """Notifies the view to update based on the model state."""

@@ -26,6 +26,7 @@ class TkinterViewer(MinesweeperViewer):
             "mine": PhotoImage(file = "images/tile_mine.gif"),
             "flag": PhotoImage(file = "images/tile_flag.gif"),
             "wrong": PhotoImage(file = "images/tile_wrong.gif"),
+            "treasure": PhotoImage(file = "images/tile_treasure.png"),
             "numbers": []
         }
         for i in range(1, 9):
@@ -73,10 +74,13 @@ class TkinterViewer(MinesweeperViewer):
         self.labels["mines"].grid(row = self.x_size+1, column = 0, columnspan = int(self.y_size/2)) # bottom left
         self.labels["flags"].grid(row = self.x_size+1, column = int(self.y_size/2)-1, columnspan = int(self.y_size/2)) # bottom right
 
+        # tile image changeable for debug reasons:
+        gfx = self.images["plain"]
+
         for x, row in enumerate(board.tiles):
             button_row = []
             for y, cell in enumerate(row):
-                button = Button(self.frame, text="", width=3, height=1)
+                button = Button(self.frame, image = gfx)
                 button.grid(row=x + 1, column=y)
                 # Left-click for revealing a cell
                 button.bind(BTN_CLICK, lambda event, x=x, y=y: self.controller.handle_click(x, y))
@@ -105,19 +109,26 @@ class TkinterViewer(MinesweeperViewer):
             for y, button in enumerate(row):
                 cell = model.tiles[x][y]
                 if cell.is_checked:
-                    if cell.type == CellType.MINE:
-                        button.config(text="*", bg="red")  # Show mines
+                    if cell.type != CellType.MINE and cell.is_flagged:
+                        button.config(image = self.images["wrong"])
+                    elif cell.type == CellType.MINE:
+                        button.config(image = self.images["mine"])  # Show mines
                     elif cell.type == CellType.TREASURE:
-                        button.config(text="T", bg="gold")  # Show treasures
+                        button.config(image = self.images["treasure"])  # Show treasures
+                    elif cell.nearby_mines == 0:
+                        button.config(
+                            image = self.images["clicked"],
+                            state="disabled"  # Disable checked cells
+                        )
                     else:
                         button.config(
-                            text=str(cell.nearby_mines) if cell.nearby_mines > 0 else " ",
+                            image = self.images["numbers"][cell.nearby_mines-1],
                             state="disabled"  # Disable checked cells
                         )
                 elif cell.is_flagged:
-                    button.config(text="F")  # Show flags
+                    button.config(image = self.images["flag"])  # Show flags
                 else:
-                    button.config(text="")
+                    button.config(image = self.images["plain"])
                     
     def display_message(self, message):
         """Displays a message box for game-over scenarios."""
