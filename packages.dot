@@ -1,0 +1,39 @@
+digraph "packages" {
+rankdir=BT
+charset="utf-8"
+"controller" [color="black", label=<controller>, shape="box", style="solid"];
+"controller.controller" [color="black", label=<controller.controller>, shape="box", style="solid"];
+"model" [color="black", label=<model>, shape="box", style="solid"];
+"model.board" [color="black", label=<model.board>, shape="box", style="solid"];
+"model.cell" [color="black", label=<model.cell>, shape="box", style="solid"];
+"model.difficulty" [color="black", label=<model.difficulty>, shape="box", style="solid"];
+"model.validator" [color="black", label=<model.validator>, shape="box", style="solid"];
+"run" [color="black", label=<run>, shape="box", style="solid"];
+"view" [color="black", label=<view>, shape="box", style="solid"];
+"view.minesweeper_viewer" [color="black", label=<view.minesweeper_viewer>, shape="box", style="solid"];
+"view.text" [color="black", label=<view.text>, shape="box", style="solid"];
+"view.text.text_view" [color="black", label=<view.text.text_view>, shape="box", style="solid"];
+"view.tkinter" [color="black", label=<view.tkinter>, shape="box", style="solid"];
+"view.tkinter.tkinter_view" [color="black", label=<view.tkinter.tkinter_view>, shape="box", style="solid"];
+"controller.controller" -> "model.board" [arrowhead="open", arrowtail="none"];
+"controller.controller" -> "model.difficulty" [arrowhead="open", arrowtail="none"];
+"controller.controller" -> "model.validator" [arrowhead="open", arrowtail="none"];
+"controller.controller" -> "view.minesweeper_viewer" [arrowhead="open", arrowtail="none"];
+"model.board" -> "model.cell" [arrowhead="open", arrowtail="none"];
+"model.board" -> "model.difficulty" [arrowhead="open", arrowtail="none"];
+"model.validator" -> "model.board" [arrowhead="open", arrowtail="none"];
+"model.validator" -> "model.cell" [arrowhead="open", arrowtail="none"];
+"model.validator" -> "model.difficulty" [arrowhead="open", arrowtail="none"];
+"run" -> "controller.controller" [arrowhead="open", arrowtail="none"];
+"run" -> "model.difficulty" [arrowhead="open", arrowtail="none"];
+"run" -> "view.text.text_view" [arrowhead="open", arrowtail="none"];
+"run" -> "view.tkinter.tkinter_view" [arrowhead="open", arrowtail="none"];
+"view.minesweeper_viewer" -> "model.board" [arrowhead="open", arrowtail="none"];
+"view.text.text_view" -> "model.board" [arrowhead="open", arrowtail="none"];
+"view.text.text_view" -> "model.cell" [arrowhead="open", arrowtail="none"];
+"view.text.text_view" -> "view.minesweeper_viewer" [arrowhead="open", arrowtail="none"];
+"view.tkinter.tkinter_view" -> "controller.controller" [arrowhead="open", arrowtail="none"];
+"view.tkinter.tkinter_view" -> "model.board" [arrowhead="open", arrowtail="none"];
+"view.tkinter.tkinter_view" -> "model.cell" [arrowhead="open", arrowtail="none"];
+"view.tkinter.tkinter_view" -> "view.minesweeper_viewer" [arrowhead="open", arrowtail="none"];
+}

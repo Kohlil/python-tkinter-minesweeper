@@ -34,6 +34,23 @@ View contains subpackages for each view. These views all extend an abstract clas
 ### Controller
 Connects the model to a specific view. This package contains the code for actually playing the game and manipulating the model.
 
-|Original|Reengineered|
-|---|---|
-|||
+| Original   | Reengineered                     |
+|:----------:|:--------------------------------:|
+| __init__   | view/MinesweeperViewer.__init__ |
+| setup (model board creation) | model/board.Board.place_items |
+| setup (model count mines) | model/board.Board.count_mines_treasures |
+| setup (model view creation) | view/MinesweeperViewer.initialize_board |
+| restart | controller/controller.Controller.handle_game_over |
+| refreshLabels | view/MinesweeperViewer.update |
+| gameOver | controller/controller.Controller.handle_game_over |
+| updateTimer (model) | model/board.Board.update_timer |
+| updateTimer (view) | view/MinesweeperViewer.update_timer |
+| updateTimer (controller) | controller/controller.Controller.update_timer |
+| getNeighbors | model/board.Board.get_neighbors |
+| onClickWrapper, onRightClickWrapper | view/MinesweeperViewer |
+| onClick (controller) |  controller/Controller.handle_click |
+| onClick (model) | model/model.Board.reveal_cell
+| onRightClick (controller) |  controller/Controller.handle_flag |
+| onRightClick (model) |  model/model.Board.toggle_flag |
+| clearSurroundingTiles, clearTile | model/model.Board.reveal_cell (recursively) |
+| main | run.py |

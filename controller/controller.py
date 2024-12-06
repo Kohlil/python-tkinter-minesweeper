@@ -5,114 +5,157 @@ from model.difficulty import Difficulty
 from model.validator import Validator
 from view.minesweeper_viewer import MinesweeperViewer
 import time
-import deal
+from icontract import require, ensure
 
-@deal.inv(lambda self: isinstance(self.view, MinesweeperViewer))  # Ensure the view is always a MinesweeperViewer
-@deal.inv(lambda self: self.board is None or isinstance(self.board, Board))  # Board must be None or a valid Board
-@deal.inv(lambda self: isinstance(self.is_running, bool))  # is_running must always be a boolean
 class Controller:
     """Manages interactions between the model and views."""
 
-    @deal.pre(lambda view: isinstance(view, MinesweeperViewer))  # Ensure the view is valid
+    @require(lambda view: isinstance(view, MinesweeperViewer), "View must be an instance of MinesweeperViewer")
     def __init__(self, view: MinesweeperViewer):
-        self.view = view  # Reference to the view
-        self.board = None  # The game board (model)
+        """
+        Initializes the Controller with a reference to the view.
+
+        Args:
+            view (MinesweeperViewer): The view that displays the Minesweeper game.
+        """
+        self.view = view
+        self.board = None
         self.is_running = False
 
-    @deal.pre(lambda self, difficulty: isinstance(difficulty, Difficulty))  # Ensure difficulty is valid
-    @deal.post(lambda self: self.board is not None)  # Ensure a board is created
+    @require(lambda difficulty: isinstance(difficulty, Difficulty), "Difficulty must be an instance of Difficulty")
     def set_difficulty(self, difficulty: Difficulty):
-        """Initializes the board with the specified difficulty."""
-        self.board = Board(difficulty)  # Create a new Board instance
-        self.view.controller = self  # Pass reference to view
+        """
+        Initializes the board with the specified difficulty and resets the view.
+
+        Args:
+            difficulty (Difficulty): The difficulty settings for the game.
+        """
+        self.board = Board(difficulty)
+        self.view.controller = self  # Provide the controller reference to the view
         self.view.initialize_board()  # Reset the view for the new board
         self.is_running = True
         self.update_view()
-        
-    @deal.pre(lambda self: self.board is not None)  # Ensure a board exists
+
     def update_timer(self):
-        """Periodically updates the view with the elapsed time."""
+        """
+        Periodically updates the view with the elapsed time from the model.
+        Runs in a separate thread to prevent blocking the main thread.
+        """
         while self.is_running:
             elapsed_time = self.board.update_timer()
             self.view.update_timer(elapsed_time)
             time.sleep(1)
-        
+
     def stop_game(self):
-        """Stops the game and timer."""
+        """
+        Stops the game and timer by updating the running state.
+        """
         self.is_running = False
 
-    @deal.pre(lambda self, x, y: x >= 0 and y >= 0)  # Ensure coordinates are non-negative
-    @deal.pre(lambda self, x, y: self.board is not None)  # Ensure a board exists
+    @require(lambda self, x, y: self.board is not None and 0 <= x < self.board.dif.x_size and 0 <= y < self.board.dif.y_size,
+             "Invalid cell coordinates or board not initialized")
     def handle_click(self, x, y):
-        """Handles a cell click event."""
-        # Start timer on first click
+        """
+        Handles a cell click event by revealing the cell and checking game status.
+
+        Args:
+            x (int): The x-coordinate of the clicked cell.
+            y (int): The y-coordinate of the clicked cell.
+
+        Returns:
+            bool: False if the game continues, or True if it ends.
+        """
         if self.board.clicked_count == 0:
             threading.Thread(target=self.update_timer, daemon=True).start()
-            
+
         if self.board:
-            won = self.board.reveal_cell(x, y)  # Call reveal_cell from the model
-            if won is not None:  # Check if the game is over
+            won = self.board.reveal_cell(x, y)
+            if won is not None:
                 self.handle_game_over(won)
             else:
                 self.update_view()
         return False
 
-    @deal.pre(lambda self, x, y: x >= 0 and y >= 0)  # Ensure coordinates are non-negative
-    @deal.pre(lambda self, x, y: self.board is not None)  # Ensure a board exists
+    @require(lambda self, x, y: self.board is not None and 0 <= x < self.board.dif.x_size and 0 <= y < self.board.dif.y_size,
+             "Invalid cell coordinates or board not initialized")
     def handle_flag(self, x, y):
-        """Handles a flag event on a cell."""
+        """
+        Handles a flagging event on a cell, toggling its flagged state.
+
+        Args:
+            x (int): The x-coordinate of the flagged cell.
+            y (int): The y-coordinate of the flagged cell.
+
+        Returns:
+            bool: False if the game continues, or True if it ends.
+        """
         if self.board:
-            won = self.board.toggle_flag(x, y)  # Call toggle_flag from the model
-            if won is not None:  # Check if the game is over
+            won = self.board.toggle_flag(x, y)
+            if won is not None:
                 self.handle_game_over(won)
             else:
                 self.update_view()
         return False
 
-    @deal.pre(lambda self: self.board is not None)  # Ensure a board exists
+    @require(lambda self: self.board is not None, "Board must be initialized before updating the view")
     def update_view(self):
-        """Notifies the view to update based on the model state."""
+        """
+        Notifies the view to update its display based on the current board state.
+        """
         if self.board:
             self.view.update(self.board)
-        
-    @deal.pre(lambda self, won: isinstance(won, bool))  # Ensure won is a boolean
+
+    @require(lambda self, won: isinstance(won, bool), "Game outcome must be a boolean")
     def handle_game_over(self, won):
-        """Handles the game-over scenario."""
-        self.is_running = False  # Stop the game loop
+        """
+        Handles the game-over scenario by stopping the game, updating the view,
+        and prompting the user to restart if desired.
+
+        Args:
+            won (bool): True if the player won, False otherwise.
+        """
+        self.is_running = False
         self.stop_game()
-        self.update_view()  # Reveal the entire board
-        restart = False
-        if won:
-            restart = self.view.display_message("You Win! Play again?")
-        else:
-            restart = self.view.display_message("You Lose! Play again?")
-        
+        self.update_view()
+
+        # Display the result and prompt for restart
+        restart = self.view.display_message("You Win! Play again?" if won else "You Lose! Play again?")
         if restart:
             self.set_difficulty(self.board.dif)
 
-    @deal.post(lambda result: result is None or isinstance(result, Board))  # Ensure the returned board is valid
+    @ensure(lambda self, result: result is None or isinstance(result, Board), "Returned object must be a Board or None")
     def get_board(self):
-        """Returns the current game board."""
+        """
+        Retrieves the current game board.
+
+        Returns:
+            Board: The current game board, or None if not initialized.
+        """
         return self.board
 
     def enable_testing_mode(self):
-        """Enables testing mode by loading a predefined board."""
+        """
+        Enables testing mode by loading a predefined board configuration from a file.
+        Validates the board before use.
+        """
         file_path = self.view.get_existing_board_path()
         if file_path:
             try:
                 self.board.load_board_from_csv(file_path)
                 if not Validator.validate_board(self.board):
-                    raise ValueError("board is not valid")
+                    raise ValueError("Loaded board is not valid")
                 self.update_view()
             except ValueError as e:
                 print(f"Error loading board: {e}")
                 sys.exit(1)
 
-    @deal.pre(lambda self, file_path: isinstance(file_path, str))  # Ensure the file path is a string
+    @require(lambda self, file_path: isinstance(file_path, str) and self.board is not None,
+             "File path must be a string and the board must be initialized")
     def save_game(self, file_path):
-        """Saves the current game state to a file."""
+        """
+        Saves the current game state to the specified file.
+
+        Args:
+            file_path (str): The path to save the game state.
+        """
         self.board.save_game(file_path)
-        
-    @deal.post(lambda result: result is None or isinstance(result, Board))  # Ensure the returned board is valid
-    def get_board(self):
-        return self.board

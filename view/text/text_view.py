@@ -1,13 +1,16 @@
 from view.minesweeper_viewer import MinesweeperViewer
 from model.board import Board
 from model.cell import Cell, CellType
+from icontract import require, ensure
 import sys
 
 
 class TextView(MinesweeperViewer):
     """Represents a text-based interface for Minesweeper."""
 
+    @require(lambda: issubclass(MinesweeperViewer, object), "MinesweeperViewer must be defined")
     def __init__(self):
+        """Initializes the TextView with no controller initially."""
         super().__init__(None)  # Initialize with no controller for now
 
     def initialize_board(self):
@@ -29,10 +32,11 @@ class TextView(MinesweeperViewer):
         print("-" * 30)
 
     def display_status(self):
-        """Displays the game status, including the timer and separator."""
+        """Displays the game status, including the timer and a separator."""
         print(f"Time Elapsed: {self.elapsed_time}")
         print("-" * 30)
 
+    @require(lambda model: isinstance(model, Board), "model must be an instance of Board")
     def display_board(self, model: Board):
         """Displays the Minesweeper board in text form, reflecting the current model state."""
         self.display_status()  # Show timer and separator
@@ -45,7 +49,6 @@ class TextView(MinesweeperViewer):
         # Create each row with a row label (shifted to start from 1)
         for idx, row in enumerate(model.tiles):
             row_repr = []
-            cell: Cell
             for cell in row:
                 if cell.is_checked:
                     if cell.type != CellType.MINE and cell.is_flagged:
@@ -65,7 +68,6 @@ class TextView(MinesweeperViewer):
             print(f"{idx+1:2} | " + " ".join(row_repr))  # Add row label and vertical separator
         print("\n\n")
 
-
     def run(self):
         """Starts the text-based game loop."""
         self.keep_going = True
@@ -78,33 +80,45 @@ class TextView(MinesweeperViewer):
             if len(parts) == 3:
                 try:
                     x, y = int(parts[2]) - 1, int(parts[1]) - 1
-                    
-                    if x > self.x_size or y > self.y_size or self.x_size < 1 or self.y_size < 1:
-                        raise ValueError()
-                    
+
+                    if not (0 <= x < self.x_size and 0 <= y < self.y_size):
+                        raise ValueError("Coordinates are out of bounds!")
+
                     if parts[0].lower() == "click":
                         self.keep_going = not self.controller.handle_click(x, y)
                     elif parts[0].lower() == "flag":
                         self.keep_going = not self.controller.handle_flag(x, y)
                     else:
                         print("Invalid command! Use 'click x y' or 'flag x y'.")
-                except ValueError:
-                    print("Invalid coordinates! Use integers for x and y.")
+                except ValueError as e:
+                    print(f"Invalid input: {e}")
             else:
                 print("Invalid command! Use 'click x y' or 'flag x y'.")
 
+    @require(lambda model: isinstance(model, Board), "model must be an instance of Board")
     def update(self, model: Board):
         """Updates the console view with the current board state."""
         self.x_size = model.dif.x_size
         self.y_size = model.dif.y_size
         self.display_board(model)
 
+    @require(lambda elapsed_time: isinstance(elapsed_time, str), "elapsed_time must be a string")
     def update_timer(self, elapsed_time):
         """Updates the timer display."""
         self.elapsed_time = elapsed_time
 
+    @require(lambda message: isinstance(message, str), "message must be a string")
+    @ensure(lambda result: isinstance(result, bool), "Return value must be a boolean")
     def display_message(self, message):
-        """Displays a message to the player."""
+        """
+        Displays a message to the player and asks if they want to restart the game.
+
+        Args:
+            message (str): The message to display.
+
+        Returns:
+            bool: True if the player wants to restart, False otherwise.
+        """
         print(message)
         while True:
             restart = input("Do you want to play again? (yes/no): ").strip().lower()
@@ -114,7 +128,13 @@ class TextView(MinesweeperViewer):
                 return restart == "yes"
             print("Invalid input. Please type 'yes' or 'no'.")
 
+    @ensure(lambda result: result is None or isinstance(result, str), "Return value must be a string or None")
     def get_existing_board_path(self):
-        """Asks the user if they want to load an existing board."""
+        """
+        Asks the user if they want to load an existing board.
+
+        Returns:
+            str or None: The path to the saved board file, or None if skipped.
+        """
         path = input("Enter the path to a saved board file, or press Enter to skip: ").strip()
         return path if path else None
