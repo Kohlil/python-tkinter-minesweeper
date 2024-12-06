@@ -18,7 +18,7 @@ Minesweeper game written in Python using Tkinter GUI library.
 3. Create a virtual environemnt: `python3.13 -m venv .venv`
 4. Activate the environemnt: `source .venv/bin/activate`
 5. Install dependencies: `pip install -r requirements.txt`
-6. Run the minesweeper game: `python run.py`
+6. Run the minesweeper game: `python run.py -h`
 
 ## Reengineered System
 When refactoring the project to adhere to the MVC model, many methods were moved to new packages and modules.

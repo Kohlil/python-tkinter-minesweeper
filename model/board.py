@@ -3,6 +3,7 @@ from model.difficulty import Difficulty
 from model.cell import Cell, CellType
 from shared.utility import Utility
 from datetime import datetime
+import csv
 
 
 class Board:
@@ -105,23 +106,23 @@ class Board:
                 cell.is_checked = True  # Reveal all cells
 
     def get_neighbors(self, x, y):
+        """Returns a list of neighboring cells around the given coordinates."""
         neighbors = []
         coords = [
-            {"x": x - 1, "y": y - 1},  # top right
-            {"x": x - 1, "y": y},  # top middle
-            {"x": x - 1, "y": y + 1},  # top left
-            {"x": x, "y": y - 1},  # left
-            {"x": x, "y": y + 1},  # right
-            {"x": x + 1, "y": y - 1},  # bottom right
-            {"x": x + 1, "y": y},  # bottom middle
-            {"x": x + 1, "y": y + 1},  # bottom left
+            (x - 1, y - 1),  # top left
+            (x - 1, y),      # top middle
+            (x - 1, y + 1),  # top right
+            (x, y - 1),      # left
+            (x, y + 1),      # right
+            (x + 1, y - 1),  # bottom left
+            (x + 1, y),      # bottom middle
+            (x + 1, y + 1),  # bottom right
         ]
-        for n in coords:
-            try:
-                neighbors.append(self.tiles[n["x"]][n["y"]])
-            except IndexError:
-                pass
+        for nx, ny in coords:
+            if 0 <= nx < self.dif.x_size and 0 <= ny < self.dif.y_size:
+                neighbors.append(self.tiles[nx][ny])
         return neighbors
+
 
     def place_items(self):
         # Create initial board
@@ -206,3 +207,47 @@ class Board:
 
         # Return the new position of the mine
         return new_x, new_y
+
+    def load_board_from_csv(self, file_path: str):
+        """
+        Loads a Minesweeper board from a CSV file.
+        
+        Args:
+            file_path (str): Path to the CSV file.
+        
+        Raises:
+            ValueError: If the CSV file format is invalid.
+        """
+        try:
+            with open(file_path, "r") as file:
+                reader = csv.reader(file)
+                rows = list(reader)
+
+            # Validate the CSV dimensions
+            if len(rows) != self.dif.x_size or any(len(row) != self.dif.y_size for row in rows):
+                raise ValueError("CSV dimensions do not match the board size.")
+
+            # Initialize the tiles based on the CSV content
+            self.tiles = []
+            for x, row in enumerate(rows):
+                self.tiles.append([])
+                for y, value in enumerate(row):
+                    if value == "0":
+                        cell_type = CellType.EMPTY
+                    elif value == "1":
+                        cell_type = CellType.MINE
+                    elif value == "2":
+                        cell_type = CellType.TREASURE
+                    else:
+                        raise ValueError(f"Invalid cell type '{value}' in CSV at ({x}, {y}).")
+                    
+                    self.tiles[x].append(Cell(cell_type, x, y))
+
+            # Recalculate mine counts
+            self.count_mines_treasures()
+
+        except FileNotFoundError:
+            raise ValueError(f"File not found: {file_path}")
+        except csv.Error as e:
+            raise ValueError(f"Error reading CSV file: {e}")
+
