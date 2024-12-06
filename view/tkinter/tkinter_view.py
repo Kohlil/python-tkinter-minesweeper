@@ -1,8 +1,8 @@
 import platform
+from tkinter import Button, Frame, Label, PhotoImage, Tk, filedialog
 from controller.controller import Controller
 from model.cell import CellType
 from view.minesweeper_viewer import MinesweeperViewer
-from tkinter import *
 from model.board import Board
 from tkinter import messagebox
 
@@ -53,7 +53,19 @@ class TkinterViewer(MinesweeperViewer):
         self.tk.mainloop()
     
     def get_existing_board_path(self):
-        return None
+        """Prompts the user to decide if they want to load a saved board, then opens a file dialog if confirmed."""
+        # Ask the user if they want to load a saved board
+        response = messagebox.askyesno(
+            "Load Saved Board",
+            "Do you want to load a saved board file?"
+        )
+        if response:  # User clicked 'Yes'
+            file_path = filedialog.askopenfilename(
+                title="Select a Saved Board File",
+                filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+            )
+            return file_path if file_path else None
+        return None  # User clicked 'No'
     
     def initialize_board(self):
         """Sets up the buttons dynamically for the current board size."""
@@ -104,7 +116,6 @@ class TkinterViewer(MinesweeperViewer):
         """Updates the view to reflect the current model state."""
         self.labels["mines"].config(text=f"Mines: {model.actual_mines}")
         self.labels["flags"].config(text=f"Flags: {model.flag_count}")
-        print('updating view')
         for x, row in enumerate(self.buttons):
             for y, button in enumerate(row):
                 cell = model.tiles[x][y]
@@ -133,4 +144,8 @@ class TkinterViewer(MinesweeperViewer):
     def display_message(self, message):
         """Displays a message box for game-over scenarios."""
         self.tk.update()  # Force the UI to refresh before showing the dialog
-        return messagebox.askyesno("Game Over", message)
+        if messagebox.askyesno("Game Over", message):
+            return True
+        else:
+            self.tk.quit()
+        

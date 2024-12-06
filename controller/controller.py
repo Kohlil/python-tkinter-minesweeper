@@ -20,8 +20,8 @@ class Controller:
         self.board = Board(difficulty)  # Create a new Board instance
         self.view.controller = self  # Pass reference to view
         self.view.initialize_board()  # Reset the view for the new board
-        self.update_view()
         self.is_running = True
+        self.update_view()
         
     def update_timer(self):
         """Periodically updates the view with the elapsed time."""
@@ -33,12 +33,9 @@ class Controller:
     def stop_game(self):
         """Stops the game and timer."""
         self.is_running = False
-        if self.board:
-            self.board.stop_timer()
 
     def handle_click(self, x, y):
         """Handles a cell click event."""
-        print(str(x) + ' ' + str(y))
         # start timer on first click
         if self.board.clicked_count == 0:
             threading.Thread(target=self.update_timer, daemon=True).start()
@@ -49,6 +46,7 @@ class Controller:
                 self.handle_game_over(won)
             else:
                 self.update_view()
+        return False
 
     def handle_flag(self, x, y):
         """Handles a flag event on a cell."""
@@ -58,6 +56,7 @@ class Controller:
                 self.handle_game_over(won)
             else:
                 self.update_view()
+        return False
 
     def update_view(self):
         """Notifies the view to update based on the model state."""
@@ -67,6 +66,7 @@ class Controller:
     def handle_game_over(self, won):
         """Handles the game-over scenario."""
         self.is_running = False  # Stop the game loop
+        self.stop_game()
         self.update_view()  # Reveal the entire board
         restart = False
         if won:
@@ -81,22 +81,18 @@ class Controller:
         """Returns the current game board."""
         return self.board
 
-    def enable_testing_mode(self, file_path):
+    def enable_testing_mode(self):
         """Enables testing mode by loading a predefined board."""
-        try:
-            self.board.load_board_from_csv(file_path)
-            self.update_view()
-        except ValueError as e:
-            print(f"Invalid test board: {e}")
+        file_path = self.view.get_existing_board_path()
+        if file_path:
+            try:
+                self.board.load_board_from_csv(file_path)
+            except ValueError as e:
+                print(f"Error loading board: {e}")
 
     def save_game(self, file_path):
         """Saves the current game state to a file."""
         self.board.save_game(file_path)
-
-    def load_game(self, file_path):
-        """Loads a saved game state from a file."""
-        self.board = self.board.load_game(file_path)
-        self.update_view()
         
     def get_board(self):
         return self.board

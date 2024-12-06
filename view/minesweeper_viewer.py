@@ -9,6 +9,7 @@ class MinesweeperViewer(ABC):
         
     @abstractmethod
     def initialize_board(self):
+        """Sets up the tiles dynamically for the current board size."""
         pass
 
     @abstractmethod
@@ -23,4 +24,15 @@ class MinesweeperViewer(ABC):
     
     @abstractmethod
     def update_timer(self):
+        """Updates the timer display."""
+        pass
+    
+    @abstractmethod
+    def display_message(self, message):
+        """Displays a message box for game-over scenarios and returns whether or not to restart."""
+        pass
+    
+    @abstractmethod
+    def get_existing_board_path(self):
+        """Asks user if they want to load an existing board, returns path to board or None"""
         pass
