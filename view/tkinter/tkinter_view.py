@@ -136,6 +136,10 @@ class TkinterViewer(MinesweeperViewer):
         """
         self.labels["mines"].config(text=f"Mines: {model.actual_mines}")
         self.labels["flags"].config(text=f"Flags: {model.flag_count}")
+        
+        # If board size changes, reinitialize it
+        if self.x_size != model.dif.x_size or self.y_size != model.dif.y_size:
+            self.initialize_board()
 
         for x, row in enumerate(self.buttons):
             for y, button in enumerate(row):

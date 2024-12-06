@@ -43,20 +43,20 @@ The `run.py` program accepts the following command-line arguments:
 
 ### Required Arguments:
 - **`<difficulty>`**: Select the difficulty level. Options:
-  - `BEGINNER`: 8x8 board with 10 mines.
-  - `INTERMEDIATE`: 16x16 board with 40 mines.
-  - `EXPERT`: 30x16 board with 99 mines.
+  - `BEGINNER`: 8x8 board with up to 10 mines.
+  - `INTERMEDIATE`: 16x16 board with up to 40 mines.
+  - `EXPERT`: 30x16 board with up to 99 mines.
 - **`<viewer>`**: Choose the viewer type. Options:
   - `tkinter`: GUI-based view using the Tkinter library.
   - `text`: Text-based view for playing in the terminal.
 
 ### Optional Arguments:
-- **`--testing-mode`**: Enable testing mode to load a predefined board from a CSV file.
+- **`--testing-mode`**: Enable testing mode to load a predefined board from a CSV file. !! MUST BE BEGINNER DIFFICULTY !!
 
 ### Example Usage:
 ```bash
-python run.py BEGINNER tkinter
-python run.py INTERMEDIATE text --testing-mode
+python run.py INTERMEDIATE tkinter
+python run.py BEGINNER text --testing-mode
 ```
 
 ## Reengineered System

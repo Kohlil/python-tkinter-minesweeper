@@ -174,8 +174,11 @@ class Board:
             (x + 1, y - 1), (x + 1, y), (x + 1, y + 1),
         ]
         for nx, ny in coords:
-            if 0 <= nx < self.dif.x_size and 0 <= ny < self.dif.y_size:
-                neighbors.append(self.tiles[nx][ny])
+            try:
+                if 0 <= nx < self.dif.x_size and 0 <= ny < self.dif.y_size:
+                    neighbors.append(self.tiles[nx][ny])
+            except IndexError:
+                pass # Ignore index errors
         return neighbors
 
     @require(lambda self: self.dif.min_mines > self.dif.min_treasures,
@@ -284,17 +287,11 @@ class Board:
 
         Args:
             file_path (str): The path to the CSV file.
-
-        Raises:
-            ValueError: If the CSV format is invalid or the file is not found.
         """
         try:
             with open(file_path, "r") as file:
                 reader = csv.reader(file)
                 rows = list(reader)
-
-            if len(rows) != self.dif.x_size or any(len(row) != self.dif.y_size for row in rows):
-                raise ValueError("CSV dimensions do not match the board size.")
 
             self.tiles = []
             has_made_move = False
@@ -308,10 +305,10 @@ class Board:
             if has_made_move:
                 self.clicked_count = 1
                 
-            self.count_mines_treasures()
-            
             # Try to guess the difficulty based on board data
             self.dif = self.detect_difficulty()
+                
+            self.count_mines_treasures()
 
         except FileNotFoundError:
             raise ValueError(f"File not found: {file_path}")
@@ -360,8 +357,15 @@ class Board:
         x_size = len(self.tiles)
         y_size = len(self.tiles[0]) if x_size > 0 else 0
 
-        total_mines = sum(
+        # Update counts
+        self.actual_mines = sum(
             1 for row in self.tiles for cell in row if cell.type == CellType.MINE
+        )
+        self.flag_count = sum(
+            1 for row in self.tiles for cell in row if cell.is_flagged
+        )
+        self.correct_flag_count = sum(
+            1 for row in self.tiles for cell in row if cell.type == CellType.MINE and cell.is_flagged
         )
         total_treasures = sum(
             1 for row in self.tiles for cell in row if cell.type == CellType.TREASURE
@@ -371,7 +375,7 @@ class Board:
             if (
                 difficulty.x_size == x_size
                 and difficulty.y_size == y_size
-                and difficulty.min_mines <= total_mines <= difficulty.max_mines
+                and difficulty.min_mines <= self.actual_mines <= difficulty.max_mines
                 and difficulty.min_treasures <= total_treasures <= difficulty.max_treasures
             ):
                 return difficulty
