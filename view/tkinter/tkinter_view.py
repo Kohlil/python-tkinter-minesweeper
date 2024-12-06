@@ -1,8 +1,10 @@
 import platform
 from controller.controller import Controller
+from model.cell import CellType
 from view.minesweeper_viewer import MinesweeperViewer
 from tkinter import *
 from model.board import Board
+from tkinter import messagebox
 
 BTN_CLICK = "<Button-1>"
 BTN_FLAG = "<Button-2>" if platform.system() == 'Darwin' else "<Button-3>"
@@ -41,9 +43,12 @@ class TkinterViewer(MinesweeperViewer):
         }
         
         self.buttons = []
+        self.elasped_time = "00:00:00"
+        self.is_running = True
         
     def run(self):
         """Starts the Tkinter main loop."""
+        self.start_timer()
         self.tk.mainloop()
     
     def get_existing_board_path(self):
@@ -71,24 +76,50 @@ class TkinterViewer(MinesweeperViewer):
         for x, row in enumerate(board.tiles):
             button_row = []
             for y, cell in enumerate(row):
-                button = Button(self.frame, text="", width=3, height=1,
-                                command=lambda x=x, y=y: self.controller.handle_click(x, y))
+                button = Button(self.frame, text="", width=3, height=1)
                 button.grid(row=x + 1, column=y)
+                # Left-click for revealing a cell
+                button.bind(BTN_CLICK, lambda event, x=x, y=y: self.controller.handle_click(x, y))
+                # Right-click for flagging a cell
+                button.bind(BTN_FLAG, lambda event, x=x, y=y: self.controller.handle_flag(x, y))
                 button_row.append(button)
             self.buttons.append(button_row)
 
     def update_timer(self, elapsed_time):
         """Updates the timer display."""
-        self.labels["time"].config(text=elapsed_time)
+        self.elasped_time = elapsed_time
+        
+    def start_timer(self):
+        """Starts the periodic timer updates."""
+        if self.is_running:
+            self.labels["time"].config(text=self.elasped_time)
+            self.tk.after(1000, self.start_timer)  # Schedule the next update
+
     
     def update(self, model: Board):
         """Updates the view to reflect the current model state."""
         self.labels["mines"].config(text=f"Mines: {model.actual_mines}")
-        self.labels["flags"].config(text=f"Flags: {model.flagCount}")
+        self.labels["flags"].config(text=f"Flags: {model.flag_count}")
+        print('updating view')
         for x, row in enumerate(self.buttons):
             for y, button in enumerate(row):
                 cell = model.tiles[x][y]
                 if cell.is_checked:
-                    button.config(text=str(cell.nearby_mines) if cell.nearby_mines > 0 else " ")
+                    if cell.type == CellType.MINE:
+                        button.config(text="*", bg="red")  # Show mines
+                    elif cell.type == CellType.TREASURE:
+                        button.config(text="T", bg="gold")  # Show treasures
+                    else:
+                        button.config(
+                            text=str(cell.nearby_mines) if cell.nearby_mines > 0 else " ",
+                            state="disabled"  # Disable checked cells
+                        )
                 elif cell.is_flagged:
-                    button.config(text="F")
+                    button.config(text="F")  # Show flags
+                else:
+                    button.config(text="")
+                    
+    def display_message(self, message):
+        """Displays a message box for game-over scenarios."""
+        self.tk.update()  # Force the UI to refresh before showing the dialog
+        return messagebox.askyesno("Game Over", message)

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-
 from model.board import Board
 
 class MinesweeperViewer(ABC):
@@ -7,6 +6,10 @@ class MinesweeperViewer(ABC):
 
     def __init__(self, controller):
         self.controller = controller  # Reference to the controller
+        
+    @abstractmethod
+    def initialize_board(self):
+        pass
 
     @abstractmethod
     def run(self):
@@ -17,4 +20,7 @@ class MinesweeperViewer(ABC):
     def update(self, model: Board):
         """Updates the view based on the current model state."""
         pass
-
+    
+    @abstractmethod
+    def update_timer(self):
+        pass
