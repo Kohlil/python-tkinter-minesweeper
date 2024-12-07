@@ -2,7 +2,7 @@ import random
 from model.difficulty import Difficulty
 from model.cell import Cell, CellType
 from shared.utility import Utility
-from datetime import datetime
+from datetime import datetime, timedelta
 import csv
 from icontract import require, ensure, invariant
 
@@ -283,32 +283,44 @@ class Board:
     @require(lambda file_path: isinstance(file_path, str))
     def load_board_from_csv(self, file_path: str):
         """
-        Loads a board configuration from a CSV file.
+        Loads a board configuration and optionally the game time from a CSV file.
 
         Args:
             file_path (str): The path to the CSV file.
+
+        Raises:
+            ValueError: If the file format is invalid or the file cannot be found.
         """
         try:
             with open(file_path, "r") as file:
                 reader = csv.reader(file)
                 rows = list(reader)
 
-            self.tiles = []
-            has_made_move = False
-            for x, row in enumerate(rows):
-                self.tiles.append([])
-                for y, value in enumerate(row):
-                    self.tiles[x].append(Cell(int(value), x, y))
-                    if not has_made_move:
-                        has_made_move = self.tiles[x][y].is_checked or self.tiles[x][y].is_flagged
+                # Check if the first row contains game time
+                game_time = "00:00:00"  # Default game time
+                if rows[0] and rows[0][0].startswith("Game Time:"):
+                    game_time = rows.pop(0)[0].split(": ", 1)[-1]
+                
+                self.start_time = None  # Reset the start time
+                self.clicked_count = 1 if game_time != "00:00:00" else 0  # Assume game has started if time is recorded
 
-            if has_made_move:
-                self.clicked_count = 1
-                
-            # Try to guess the difficulty based on board data
-            self.dif = self.detect_difficulty()
-                
-            self.count_mines_treasures()
+                self.tiles = []
+                for x, row in enumerate(rows):
+                    self.tiles.append([])
+                    for y, value in enumerate(row):
+                        self.tiles[x].append(Cell(int(value), x, y))
+
+                # Try to guess the difficulty based on board data
+                self.dif = self.detect_difficulty()
+
+                # Recalculate mines and treasures
+                self.count_mines_treasures()
+
+                # Optionally restore the elapsed game time
+                if game_time != "00:00:00":
+                    delta_parts = list(map(int, game_time.split(":")))
+                    delta_seconds = delta_parts[0] * 3600 + delta_parts[1] * 60 + delta_parts[2]
+                    self.start_time = datetime.now() - timedelta(seconds=delta_seconds)
 
         except FileNotFoundError:
             raise ValueError(f"File not found: {file_path}")
@@ -318,7 +330,7 @@ class Board:
     @require(lambda file_path: isinstance(file_path, str) and file_path.endswith(".csv"))
     def save_board_to_csv(self, file_path: str):
         """
-        Saves the current board configuration to a CSV file.
+        Saves the current board configuration and game time to a CSV file.
 
         Args:
             file_path (str): The path to the CSV file.
@@ -329,6 +341,11 @@ class Board:
         try:
             with open(file_path, mode="w", newline="") as file:
                 writer = csv.writer(file)
+
+                # Write game time as the first line
+                writer.writerow([f"Game Time: {self.update_timer()}"])
+
+                # Write the board data
                 for row in self.tiles:
                     writer.writerow([str(cell.to_csv_state()) for cell in row])
         except IOError as e:

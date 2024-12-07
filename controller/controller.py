@@ -33,7 +33,6 @@ class Controller:
         self.board = Board(difficulty)
         self.view.controller = self  # Provide the controller reference to the view
         self.view.initialize_board()  # Reset the view for the new board
-        self.is_running = True
         self.update_view()
 
     def update_timer(self):
@@ -45,6 +44,18 @@ class Controller:
             elapsed_time = self.board.update_timer()
             self.view.update_timer(elapsed_time)
             time.sleep(1)
+           
+    @ensure(lambda self: self.is_running, "Timer must be running after starting timer") 
+    def start_timer(self):
+        """
+        Starts polling the model for the current time once every second if not already started
+        """
+        # Update time regardless
+        elapsed_time = self.board.update_timer()
+        self.view.update_timer(elapsed_time)
+        if not self.is_running:
+            self.is_running = True
+            threading.Thread(target=self.update_timer, daemon=True).start()
 
     def stop_game(self):
         """
@@ -66,7 +77,7 @@ class Controller:
             bool: False if the game continues, or True if it ends.
         """
         if self.board.clicked_count == 0:
-            threading.Thread(target=self.update_timer, daemon=True).start()
+            self.start_timer()
 
         if self.board:
             won = self.board.reveal_cell(x, y)
@@ -162,6 +173,9 @@ class Controller:
                 self.board.load_board_from_csv(file_path)
                 if validate and not Validator.validate_board(self.board):
                     raise ValueError("Loaded board is not valid")
+                elif self.board.start_time != None:
+                    # Start timer if not in testing mode and the user had made a move before saving
+                    self.start_timer()
                 self.update_view()
             except ValueError as e:
                 print(f"Error loading board: {e}")
